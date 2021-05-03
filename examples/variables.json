@@ -1,0 +1,18 @@
+[
+  {
+    "Key": "First",
+    "Value": "val for first",
+    "Description": "desc",
+    "Category": "terraform",
+    "IsHCLVariable": false,
+    "IsSensitive": false
+  },
+  {
+    "Key": "second",
+    "Value": "val for second",
+    "Description": "this is a description",
+    "Category": "env",
+    "IsHCLVariable": false,
+    "IsSensitive": true
+  }
+]
