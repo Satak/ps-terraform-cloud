@@ -35,3 +35,7 @@ This module can also use your Azure DevOps **organization** and **project** name
 
 - `DEVOPS_ORGANIZATION`
 - `DEVOPS_PROJECT`
+
+## Terraform Cloud Organization Env Var
+
+You can set `TF_CLOUD_ORGANIZATION` env var (`$Env:TF_CLOUD_ORGANIZATION = 'my-tf-cloud-org'`) so you don't have to explicitly pass Terraform Cloud Organization name to cmdlets.
