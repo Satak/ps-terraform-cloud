@@ -1,14 +1,14 @@
 <#
-You must set environment variable TF_CLOUD_TOKEN as your Terraform Cloud API Token for authentication!
-Example: $Env:TF_CLOUD_TOKEN = 'xxxxxxxxxxxxxx.atlasv1.xxx...'
+  .SYNOPSIS
+     Powershell module to manage Terraform Cloud via its API
+  .DESCRIPTION
+     You must set environment variable TF_CLOUD_TOKEN as your Terraform Cloud API Token for authentication!
+     Example: $Env:TF_CLOUD_TOKEN = 'xxxxxxxxxxxxxx.atlasv1.xxx...'
 #>
 
 $TF_CLOUD_TOKEN = $Env:TF_CLOUD_TOKEN | ConvertTo-SecureString -AsPlainText -Force
 $TF_CLOUD_ROOT_API_URL = 'https://app.terraform.io/api/v2'
 $TF_CLOUD_CONTENT_TYPE = 'application/vnd.api+json'
-
-$DEVOPS_ORGANIZATION = $Env:DEVOPS_ORGANIZATION
-$DEVOPS_PROJECT = $Env:DEVOPS_PROJECT
 
 class WorkspaceVariable {
   [string]$Key
@@ -70,16 +70,17 @@ function New-WorkspaceVariable {
     [string[]]$Category = 'terraform',
 
     [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
+    [alias('hcl')]
     [bool[]]$IsHCLVariable = $false,
 
     [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
+    [alias('sensitive')]
     [bool[]]$IsSensitive = $false
   )
-  Begin {}
+
   Process {
     [WorkspaceVariable]::new($Key, $Value, $Description, $Category, $IsHCLVariable, $IsSensitive )
   }
-  End {}
 }
 
 function New-TerraformCloudOrganization {
@@ -91,14 +92,14 @@ function New-TerraformCloudOrganization {
     .EXAMPLE
         New-TerraformCloudOrganization -Name MyOrgName -Email name@domain.com
     .PARAMETER Name
-        The Name of the Terraform Cloud Organization
+        The Name of the Terraform Cloud Organization, defaults to env var TF_CLOUD_ORGANIZATION
     .PARAMETER Email
         Admin email address that will manage this organization
   #>
   [CmdletBinding()]
   param (
-    [Parameter(Mandatory)]
-    [string]$Name,
+    [Parameter()]
+    [string]$Name = $env:TF_CLOUD_ORGANIZATION,
 
     [Parameter(Mandatory)]
     [string]$Email
@@ -130,7 +131,7 @@ function New-TerraformCloudWorkspace {
     .PARAMETER Name
         The name of the workspace, which can only include letters, numbers, -, and _. This will be used as an identifier and must be unique in the organization.
     .PARAMETER OrganizationName
-        The Name of the Terraform Cloud Organization
+        The Name of the Terraform Cloud Organization, defaults to env var TF_CLOUD_ORGANIZATION
     .PARAMETER OAuthTokenId
         The VCS Connection (OAuth Connection + Token) to use. This ID can be obtained by the Get-TerraformCloudOAuthToken cmdlet.
     .PARAMETER VCSIdentifier
@@ -145,13 +146,13 @@ function New-TerraformCloudWorkspace {
     [string]$Name,
 
     [Parameter(Mandatory)]
-    [string]$OrganizationName,
-
-    [Parameter(Mandatory)]
     [string]$OAuthTokenId,
 
     [Parameter()]
-    [string]$VCSIdentifier,
+    [string]$OrganizationName = $env:TF_CLOUD_ORGANIZATION,
+
+    [Parameter()]
+    [string]$VCSIdentifier = "$($Env:DEVOPS_ORGANIZATION)/$($Env:DEVOPS_PROJECT)/_git/$Name",
 
     [Parameter()]
     [string]$WorkingDirectory = '/src'
@@ -159,7 +160,6 @@ function New-TerraformCloudWorkspace {
 
   process {
     $url = "$TF_CLOUD_ROOT_API_URL/organizations/$OrganizationName/workspaces"
-    $_identifier = $VCSIdentifier ? $VCSIdentifier : "$DEVOPS_ORGANIZATION/$DEVOPS_PROJECT/_git/$Name"
 
     $body = @{
       data = @{
@@ -168,7 +168,7 @@ function New-TerraformCloudWorkspace {
           "name"              = $Name
           "working-directory" = $WorkingDirectory
           "vcs-repo"          = @{
-            "identifier"     = $_identifier
+            "identifier"     = $VCSIdentifier
             "oauth-token-id" = $OAuthTokenId
           }
         }
@@ -187,18 +187,18 @@ function Get-TerraformCloudWorkspace {
         https://www.terraform.io/docs/cloud/api/workspaces.html
     .EXAMPLE
         Get-TerraformCloudWorkspace -OrganizationName MyOrganization
-    .PARAMETER OrganizationName
-        The Name of the Terraform Cloud Organization
     .PARAMETER Name
         Provide a Terraform Workspace Name if yo want get single workspace id
+    .PARAMETER OrganizationName
+        The Name of the Terraform Cloud Organization, defaults to env var TF_CLOUD_ORGANIZATION
   #>
   [CmdletBinding()]
   param (
-    [Parameter(Mandatory)]
-    [string]$OrganizationName,
+    [Parameter()]
+    [string]$Name,
 
     [Parameter()]
-    [string]$Name
+    [string]$OrganizationName = $env:TF_CLOUD_ORGANIZATION
   )
 
   $url = "$TF_CLOUD_ROOT_API_URL/organizations/$OrganizationName/workspaces"
@@ -213,14 +213,39 @@ function Get-TerraformCloudWorkspace {
   }
 }
 
+function Remove-TerraformCloudWorkspace {
+  <#
+    .SYNOPSIS
+        Remove-TerraformCloudWorkspace
+    .Description
+        https://www.terraform.io/docs/cloud/api/workspaces.html#delete-a-workspace
+    .EXAMPLE
+        $WorkspaceIds | Remove-TerraformCloudWorkspace
+    .PARAMETER WorkspaceId
+        Terraform Cloud Workspace Id(s)
+  #>
+  [CmdletBinding()]
+  param (
+    [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+    [alias('id')]
+    [string[]]$WorkspaceId
+  )
+
+  process {
+    $url = "$TF_CLOUD_ROOT_API_URL/workspaces/$WorkspaceId"
+    Invoke-RestMethod -Uri $url -Method Delete -Token $TF_CLOUD_TOKEN -Authentication Bearer
+  }
+
+}
+
 function New-TerraformCloudWorkspaceVariable {
   <#
     .SYNOPSIS
         Create new Terraform Cloud Workspace variable(s)
     .Description
-        https://www.terraform.io/docs/cloud/api/workspace-variables.html
+        https://www.terraform.io/docs/cloud/api/workspace-variables.html#create-a-variable
     .EXAMPLE
-        $WorkspaceVariables | New-TerraformCloudWorkspaceVariable -WorkspaceId xxxx
+        $WorkspaceVariables | New-TerraformCloudWorkspaceVariable -WorkspaceId $WorkspaceId
     .PARAMETER WorkspaceId
         Terraform Cloud Workspace Id
     .PARAMETER WorkspaceVariable
@@ -252,7 +277,111 @@ function New-TerraformCloudWorkspaceVariable {
       }
     } | ConvertTo-Json
 
-    Invoke-RestMethod -Uri $url -Method Post -Body $body -ContentType $TF_CLOUD_CONTENT_TYPE -Token $TF_CLOUD_TOKEN -Authentication Bearer
+    Invoke-RestMethod -Uri $url -Method Post -Body $body -ContentType $TF_CLOUD_CONTENT_TYPE -Token $TF_CLOUD_TOKEN -Authentication Bearer | Select-Object -ExpandProperty data
+  }
+}
+
+function Update-TerraformCloudWorkspaceVariable {
+  <#
+    .SYNOPSIS
+        Update Terraform Cloud Workspace variable
+    .Description
+        https://www.terraform.io/docs/cloud/api/workspace-variables.html#update-variables
+    .EXAMPLE
+        $WorkspaceVariable | Update-TerraformCloudWorkspaceVariable -WorkspaceId $WorkspaceId -VariableId $VariableId
+    .PARAMETER WorkspaceId
+        Terraform Cloud Workspace Id
+    .PARAMETER VariableId
+        Terraform Cloud Workspace Variable Id
+    .PARAMETER WorkspaceVariable
+        Terraform Cloud Workspace object
+  #>
+  [CmdletBinding()]
+  param (
+    [Parameter(Mandatory)]
+    [string]$WorkspaceId,
+
+    [Parameter(Mandatory)]
+    [string]$VariableId,
+
+    [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+    [WorkspaceVariable[]]$WorkspaceVariable
+  )
+
+  process {
+    $url = "$TF_CLOUD_ROOT_API_URL/workspaces/$WorkspaceId/vars/$VariableId"
+
+    $body = @{
+      data = @{
+        id         = $VariableId
+        type       = "vars"
+        attributes = @{
+          key         = $WorkspaceVariable.Key
+          value       = $WorkspaceVariable.Value
+          description = $WorkspaceVariable.Description
+          category    = $WorkspaceVariable.Category
+          hcl         = $WorkspaceVariable.IsHCLVariable
+          sensitive   = $WorkspaceVariable.IsSensitive
+        }
+      }
+    } | ConvertTo-Json
+
+    Invoke-RestMethod -Uri $url -Method Patch -Body $body -ContentType $TF_CLOUD_CONTENT_TYPE -Token $TF_CLOUD_TOKEN -Authentication Bearer | select-Object -ExpandProperty data
+  }
+}
+
+function Get-TerraformCloudWorkspaceVariable {
+  <#
+    .SYNOPSIS
+        Get Terraform Cloud Workspace variable(s)
+    .Description
+        https://www.terraform.io/docs/cloud/api/workspace-variables.html#list-variables
+    .EXAMPLE
+        Get-TerraformCloudWorkspaceVariable -WorkspaceId $WorkspaceId
+    .PARAMETER WorkspaceId
+        Terraform Cloud Workspace Id
+  #>
+  [CmdletBinding()]
+  param (
+    [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+    [alias('id')]
+    [string[]]$WorkspaceId
+  )
+
+  process {
+    $url = "$TF_CLOUD_ROOT_API_URL/workspaces/$WorkspaceId/vars"
+
+    Invoke-RestMethod -Uri $url -Token $TF_CLOUD_TOKEN -Authentication Bearer | select-Object -ExpandProperty data
+  }
+}
+
+function Remove-TerraformCloudWorkspaceVariable {
+  <#
+    .SYNOPSIS
+        Delete Terraform Cloud Workspace variable
+    .Description
+        https://www.terraform.io/docs/cloud/api/workspace-variables.html#delete-variables
+    .EXAMPLE
+        $WorkspaceVariables | Remove-TerraformCloudWorkspaceVariable -WorkspaceId $WorkspaceId
+    .PARAMETER WorkspaceId
+        Terraform Cloud Workspace Id
+    .PARAMETER VariableId
+        Terraform Cloud Workspace Variable Id
+  #>
+  [CmdletBinding()]
+  param (
+    [Parameter(Mandatory)]
+    [string]$WorkspaceId,
+
+    [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+    [alias('id')]
+    [string[]]$VariableId
+  )
+
+  process {
+    $url = "$TF_CLOUD_ROOT_API_URL/workspaces/$WorkspaceId/vars/$VariableId"
+
+    Invoke-RestMethod -Uri $url -Method Delete -Token $TF_CLOUD_TOKEN -Authentication Bearer
   }
 }
 
@@ -264,14 +393,14 @@ function Get-TerraformCloudOAuthClient {
         https://www.terraform.io/docs/cloud/api/oauth-clients.html
     .EXAMPLE
         Get-TerraformCloudOAuthToken -Name MyOrganization
-    .PARAMETER Name
-        The Name of the Terraform Cloud Organization
+    .PARAMETER OrganizationName
+        The Name of the Terraform Cloud Organization, defaults to env var TF_CLOUD_ORGANIZATION
   #>
   [CmdletBinding()]
   param (
-    [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+    [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
     [alias('name')]
-    [string]$OrganizationName
+    [string]$OrganizationName = $env:TF_CLOUD_ORGANIZATION
   )
   process {
     $url = "$TF_CLOUD_ROOT_API_URL/organizations/$OrganizationName/oauth-clients"

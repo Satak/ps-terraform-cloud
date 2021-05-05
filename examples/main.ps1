@@ -1,19 +1,25 @@
-# $Env:TF_CLOUD_TOKEN is set by env
+# $Env:TF_CLOUD_TOKEN is set in VSCode envs or other runtime
 $Env:DEVOPS_ORGANIZATION = 'MY-ORG'
 $Env:DEVOPS_PROJECT = 'My-Project'
+$Env:TF_CLOUD_ORGANIZATION = 'my-tf-cloud-org'
 
-$organizationName = 'my-organization'
 $workspaceName = 'my-workspace'
 $varsFile = '.\variables.json'
 
 # import terraform cloud powershell module
-import-module (Join-Path (Split-Path -Parent $PSScriptRoot) 'PS-Terraform-Cloud')
+# import-module '../PS-Terraform-Cloud' -Force
+import-module (Join-Path (Split-Path -Parent $PSScriptRoot) 'PS-Terraform-Cloud') -Force
 
 # get oauth token from existing terraform organization
-$OAuthTokenId = $organizationName | Get-TerraformCloudOAuthClient | Get-TerraformCloudOAuthToken | Select-Object -ExpandProperty id
+$OAuthTokenId = Get-TerraformCloudOAuthClient | Get-TerraformCloudOAuthToken | Select-Object -ExpandProperty id
 
-# create terraform cloud workspace
-$workspaceId = New-TerraformCloudWorkspace -Name $workspaceName -OrganizationName $organizationName -OAuthTokenId $OAuthTokenId | Select-Object -ExpandProperty id
+# get terraform cloud workspace by name
+$workspaceId = Get-TerraformCloudWorkspace -Name $workspaceName
+
+# create terraform cloud workspace if not found by name
+if (!$workspaceId) {
+  $workspaceId = New-TerraformCloudWorkspace -Name $workspaceName -OAuthTokenId $OAuthTokenId | Select-Object -ExpandProperty id
+}
 
 # create terraform cloud vars to workspace
 Get-Content $varsFile | ConvertFrom-Json | New-WorkspaceVariable | New-TerraformCloudWorkspaceVariable -WorkspaceId $workspaceId | Out-Null

@@ -12,7 +12,7 @@
   RootModule        = 'PS-Terraform-Cloud.psm1'
 
   # Version number of this module.
-  ModuleVersion     = '0.0.2'
+  ModuleVersion     = '0.0.3'
 
   # Supported PSEditions
   # CompatiblePSEditions = @()
@@ -74,7 +74,11 @@
     'New-TerraformCloudOrganization',
     'New-TerraformCloudWorkspace',
     'Get-TerraformCloudWorkspace',
+    'Remove-TerraformCloudWorkspace',
     'New-TerraformCloudWorkspaceVariable',
+    'Update-TerraformCloudWorkspaceVariable',
+    'Get-TerraformCloudWorkspaceVariable',
+    'Remove-TerraformCloudWorkspaceVariable',
     'Get-TerraformCloudOAuthClient',
     'Get-TerraformCloudOAuthToken'
   )
