@@ -139,6 +139,8 @@ function New-TerraformCloudWorkspace {
         If you don't pass this param it assumes that you have set env vars DEVOPS_ORGANIZATION and DEVOPS_PROJECT
     .PARAMETER WorkingDirectory
         A relative path that Terraform will execute within. Default is /src
+    .PARAMETER GlobalRemoteState
+        Whether the workspace should allow all workspaces in the organization to access its state data during runs. If false, then only specifically approved workspaces can access its state.
   #>
   [CmdletBinding()]
   param (
@@ -155,7 +157,10 @@ function New-TerraformCloudWorkspace {
     [string]$VCSIdentifier = "$($Env:DEVOPS_ORGANIZATION)/$($Env:DEVOPS_PROJECT)/_git/$Name",
 
     [Parameter()]
-    [string]$WorkingDirectory = '/src'
+    [string]$WorkingDirectory = '/src',
+
+    [Parameter()]
+    [bool]$GlobalRemoteState = $true
   )
 
   process {
@@ -165,9 +170,10 @@ function New-TerraformCloudWorkspace {
       data = @{
         type       = "workspaces"
         attributes = @{
-          "name"              = $Name
-          "working-directory" = $WorkingDirectory
-          "vcs-repo"          = @{
+          "name"                = $Name
+          "global-remote-state" = $GlobalRemoteState
+          "working-directory"   = $WorkingDirectory
+          "vcs-repo"            = @{
             "identifier"     = $VCSIdentifier
             "oauth-token-id" = $OAuthTokenId
           }
