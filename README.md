@@ -8,6 +8,7 @@ Powershell module `PS-Terraform-Cloud` to manage Terraform Cloud via Powershell/
 
 | Version | Info                             | Date (DD.MM.YYYY) |
 | ------- | -------------------------------- | ----------------- |
+| 0.0.6   | Add all resource types           | 20.05.2021        |
 | 0.0.5   | Add `Import-TerraformAzureState` | 20.05.2021        |
 | 0.0.3   | Add more commands                | 04.05.2021        |
 | 0.0.2   | Init release                     | 03.05.2021        |
