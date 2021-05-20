@@ -6,10 +6,11 @@
 
 Powershell module `PS-Terraform-Cloud` to manage Terraform Cloud via Powershell/API
 
-| Version | Info              | Date (DD.MM.YYYY) |
-| ------- | ----------------- | ----------------- |
-| 0.0.3   | Add more commands | 04.05.2021        |
-| 0.0.2   | Init release      | 03.05.2021        |
+| Version | Info                             | Date (DD.MM.YYYY) |
+| ------- | -------------------------------- | ----------------- |
+| 0.0.5   | Add `Import-TerraformAzureState` | 20.05.2021        |
+| 0.0.3   | Add more commands                | 04.05.2021        |
+| 0.0.2   | Init release                     | 03.05.2021        |
 
 ## Install
 
@@ -19,7 +20,7 @@ You can install this module from the Powershell Gallery:
 
 ## Authentication
 
-You need to create a personal or teams API token in Terraform Cloud and add that token as an environment variable `TF_CLOUD_TOKEN`. Manually in Powershell setting environment variables is done like this:
+If you want to use this module for Terraform Cloud you need to create a personal or teams API token in Terraform Cloud and add that token as an environment variable `TF_CLOUD_TOKEN`. Manually in Powershell setting environment variables is done like this:
 
 ```powershell
 $Env:TF_CLOUD_TOKEN = 'xxxxxxxxxxxxxx.atlasv1.xxx...'
@@ -39,3 +40,13 @@ This module can also use your Azure DevOps **organization** and **project** name
 ## Terraform Cloud Organization Env Var
 
 You can set `TF_CLOUD_ORGANIZATION` env var (`$Env:TF_CLOUD_ORGANIZATION = 'my-tf-cloud-org'`) so you don't have to explicitly pass Terraform Cloud Organization name to cmdlets.
+
+## `Import-TerraformAzureState`
+
+Cmdlet to import any Azure resource as Terraform state and `.tf` template file.
+
+### Usage
+
+```powershell
+Get-AzVirtualNetwork | Import-TerraformAzureState -ResourceType virtual_network -RemoveState -Show
+```
