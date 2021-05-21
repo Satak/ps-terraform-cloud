@@ -51,3 +51,12 @@ Cmdlet to import any Azure resource as Terraform state and `.tf` template file.
 ```powershell
 Get-AzVirtualNetwork | Import-TerraformAzureState -ResourceType virtual_network -RemoveState -Show
 ```
+
+### Resource Types
+
+List all resource types from Azure provider:
+
+```powershell
+(terraform providers schema -json | ConvertFrom-Json).provider_schemas.'registry.terraform.io/hashicorp/azurerm'.resource_schemas | gm -MemberType NoteProperty | select -ExpandProperty name | % {"'$_',"} | clip
+```
+
