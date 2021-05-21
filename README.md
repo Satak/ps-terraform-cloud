@@ -57,6 +57,6 @@ Get-AzVirtualNetwork | Import-TerraformAzureState -ResourceType virtual_network 
 List all resource types from Azure provider:
 
 ```powershell
-(terraform providers schema -json | ConvertFrom-Json).provider_schemas.'registry.terraform.io/hashicorp/azurerm'.resource_schemas | gm -MemberType NoteProperty | select -ExpandProperty name | % {"'$_',"} | clip
+(terraform providers schema -json | ConvertFrom-Json).provider_schemas.'registry.terraform.io/hashicorp/azurerm'.resource_schemas | gm -MemberType NoteProperty | select -ExpandProperty name | % {"'$($_.substring(8))',"} | clip
 ```
 
