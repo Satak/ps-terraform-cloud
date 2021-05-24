@@ -1,6 +1,8 @@
 # Terraform Cloud Powershell Module
 
 [![Publish](https://github.com/Satak/ps-terraform-cloud/actions/workflows/publish.yml/badge.svg)](https://github.com/Satak/ps-terraform-cloud/actions/workflows/publish.yml)
+[![PS Gallery][psgallery-badge-dt]][powershell-gallery]
+[![PS Gallery][psgallery-badge-v]][powershell-gallery]
 
 ![Terraform logo](https://raw.githubusercontent.com/Satak/ps-terraform-cloud/master/icon/terraform-cloud-192.png 'Terraform logo')
 
@@ -60,3 +62,6 @@ List all resource types from Azure provider:
 (terraform providers schema -json | ConvertFrom-Json).provider_schemas.'registry.terraform.io/hashicorp/azurerm'.resource_schemas | gm -MemberType NoteProperty | select -ExpandProperty name | % {"'$($_.substring(8))',"} | clip
 ```
 
+[powershell-gallery]: https://www.powershellgallery.com/packages/PS-Terraform-Cloud/
+[psgallery-badge-dt]: https://img.shields.io/powershellgallery/dt/PS-Terraform-Cloud.svg
+[psgallery-badge-v]: https://img.shields.io/powershellgallery/v/PS-Terraform-Cloud.svg
