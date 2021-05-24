@@ -19,7 +19,9 @@ Powershell module `PS-Terraform-Cloud` to manage Terraform Cloud via Powershell/
 
 You can install this module from the Powershell Gallery:
 
-`Install-Module -Name PS-Terraform-Cloud -Force -Confirm:$False`
+```powershell
+Install-Module -Name PS-Terraform-Cloud -Force -Confirm:$False
+```
 
 ## Authentication
 
